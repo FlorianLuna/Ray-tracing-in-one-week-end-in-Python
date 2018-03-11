@@ -5,7 +5,7 @@ class Vec3:
 	Y=0.0
 	Z=0.0
 
-	def __init__(self, x, y, z):
+	def __init__(self, x=0.0, y=0.0, z=0.0):
 		self.X=x
 		self.Y=y
 		self.Z=z
@@ -34,24 +34,31 @@ class Vec3:
 	def Lerp(self,other, t):
 		return self.Mul(1.0-t) + other.Mul(t)
 
+	def PrintDesc(self):
+		print("X:",self.X,"Y:",self.Y,"Z:",self.Z)
+
+
+##################################################################################
+
 def UnitVector(myVector):
-	result = Vec3(0.0,0.0,0.0)
+	result = Vec3()
 	length = myVector.Length()
 	if length > 0.0 :
 		result = myVector.Mul(1.0/length)
 	return result
 
+##################################################################################
 
 class Ray : 
-	Origin = Vec3(0.0,0.0,0.0)
-	Direction = Vec3(0.0,0.0,0.0)
+	Origin = Vec3()
+	Direction = Vec3()
 
 	def __init__(self, origin, direction):
-		Origin = origin
-		Direction = direction
+		self.Origin = origin
+		self.Direction = direction
 
-	def PointAtParameter(t):
-		return Origin + direction.Mul(t) #TODO : probably not the right way to multiply a vec3 with a float
+	def PointAtParameter(self,t):
+		return self.Origin + self.direction.Mul(t) #TODO : probably not the right way to multiply a vec3 with a float
 
 
 #def Color(Ray ray):
