@@ -1,13 +1,7 @@
 import array
 import rt
 
-# a simple color method
-def Color(ray):	
-	unitDirection = rt.UnitVector(ray.Direction)	
-	t = 0.5 * (unitDirection.Y + 1.0)
-	tmp = rt.Vec3(1.0,1.0,1.0)
-	tmp2 = rt.Vec3(0.5,0.7,1.0)
-	return tmp.Lerp(tmp2,t)
+
 
 def RescaleColorToPPM(color, maxValue):
 	return color.Mul(maxValue)
@@ -33,7 +27,7 @@ for i in range(0, nx-1):
 		v = float(j) / float(ny)
 		direction = lowerLeftCorner + horizontal.Mul(u) + vertical.Mul(v)					
 		ray = rt.Ray(origin, direction)
-		color = Color(ray)
+		color = rt.Color(ray)
 		color = RescaleColorToPPM(color, scale)
 		index = 3 * ((ny-1-j) * nx + i) #matching what is in the book
 		image[index] = int(color.X)
