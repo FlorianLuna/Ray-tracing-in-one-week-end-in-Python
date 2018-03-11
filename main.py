@@ -1,6 +1,7 @@
 import array
 import rt
 import sys
+import random
 
 def RescaleColorToPPM(color, maxValue):
 	return color.Mul(maxValue)
@@ -17,6 +18,7 @@ def Color(ray, world):
 # PPM header
 nx = 200
 ny = 100
+nsample = 10 # 100 but for performance purpose do not use much
 maxval = 255
 ppm_header = f'P6 {nx} {ny} {maxval}\n'
 
@@ -33,13 +35,17 @@ scene = rt.HitableList()
 scene.Elems.append(rt.Sphere(rt.Vec3(0.0,0.0,-1.0), 0.5))
 scene.Elems.append(rt.Sphere(rt.Vec3(0.0,-100.5,-1.0), 100.0))
 
+mainCamera = rt.Camera()
+
 for i in range(0, nx-1):
 	for j in range(0, ny-1):
-		u = float(i) / float(nx)
-		v = float(j) / float(ny)
-		direction = lowerLeftCorner + horizontal.Mul(u) + vertical.Mul(v)
-		ray = rt.Ray(origin, direction)
-		color = Color(ray,scene)
+		color = rt.Vec3()		
+		for k in range(0, nsample-1):
+			u = ( float(i) + random.random() ) / float(nx)
+			v = ( float(j) + random.random() ) / float(ny)		
+			ray = mainCamera.GetRay(u,v)
+			color += Color(ray,scene)			
+		color = color.Mul(1.0/float(nsample))
 		color = RescaleColorToPPM(color, scale)
 		index = 3 * ((ny-1-j) * nx + i) #matching what is in the book
 		image[index] = int(color.X)

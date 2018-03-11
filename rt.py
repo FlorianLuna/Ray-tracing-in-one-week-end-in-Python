@@ -62,6 +62,18 @@ class Ray :
 
 ##################################################################################
 
+class Camera:
+	Origin = Vec3()
+	LowerLeftCorner = Vec3(-2.0,-1.0,-1.0)
+	Horizontal = Vec3(4.0,0.0,0.0)
+	Vertical = Vec3(0.0,2.0,0.0)
+
+	def GetRay(self, u,v):
+		return Ray(self.Origin, self.LowerLeftCorner + self.Horizontal.Mul(u) + self.Vertical.Mul(v) - self.Origin)
+
+
+##################################################################################
+
 class HitRecord:
 	ParamT = 0.0
 	Point = Vec3()
@@ -114,3 +126,4 @@ class HitableList:
 		return hitSomething
 	
 ##################################################################################
+
