@@ -1,4 +1,5 @@
 import math
+import random
 
 class Vec3:
 	X=0.0
@@ -30,6 +31,9 @@ class Vec3:
 
 	def Length(self):
 		return math.sqrt(self.X*self.X + self.Y*self.Y + self.Z*self.Z)
+
+	def SquaredLength(self):
+		return self.X*self.X + self.Y*self.Y + self.Z*self.Z
 
 	def Lerp(self,other, t):
 		return self.Mul(1.0-t) + other.Mul(t)
@@ -101,16 +105,23 @@ class Sphere:
 			if tMin<=tmp and tmp<=tMax :
 				hitRecord.ParamT = tmp
 				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)				
 				return True
 			
 			tmp = (-b + math.sqrt(discriminant) ) / a
 			if tMin<=tmp and tmp<=tMax : #maybe some code to put in common here
 				hitRecord.ParamT = tmp
 				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)				
 				return True
 		return False
+##################################################################################
+#Rejection method
+def RandomInUnitSphere():
+	point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
+	while point.SquaredLength() >= 1.0 :
+		point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
+	return point
 
 ##################################################################################
 
