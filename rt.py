@@ -111,14 +111,6 @@ class HitableList:
 			if curElem.Hit(ray, tMin, closestSoFar, hitRecord):
 				hitSomething = True
 				closestSoFar = hitRecord.ParamT
-				#hitRecord = temp
 		return hitSomething
 	
 ##################################################################################
-
-
-
-
-
-
-
