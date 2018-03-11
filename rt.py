@@ -58,34 +58,65 @@ class Ray :
 		self.Direction = direction
 
 	def PointAtParameter(self,t):
-		return self.Origin + self.Direction.Mul(t) #TODO : probably not the right way to multiply a vec3 with a float
+		return self.Origin + self.Direction.Mul(t)
 
 ##################################################################################
 
-def HitSphere(center, radius, ray):
-	centerToOrigin = ray.Origin - center
-	a = Vec3.Dot(ray.Direction, ray.Direction)
-	b = 2.0*Vec3.Dot(centerToOrigin, ray.Direction)
-	c = Vec3.Dot(centerToOrigin, centerToOrigin) - radius*radius
-	discriminant = b*b-4*a*c
-	if discriminant < 0.0:
-		return -1.0
-	else:
-		return (-b - math.sqrt(discriminant)) / (2.0*a)
+class HitRecord:
+	ParamT = 0.0
+	Point = Vec3()
+	Normal = Vec3()
 
 
 ##################################################################################
 
-def Color(ray):	
-	t = HitSphere(Vec3(0.0,0.0,-1.0),0.5,ray)
-	if t>0.0 :
-		normal = UnitVector(ray.PointAtParameter(t) - Vec3(0.0,0.0,-1.0))
-		return Vec3(normal.X+1.0, normal.Y+1.0, normal.Z+1.0).Mul(0.5)
-	else:
-		#background
-		unitDirection = UnitVector(ray.Direction)	
-		t = 0.5 * (unitDirection.Y + 1.0)	
-		return Vec3(1.0,1.0,1.0).Lerp(Vec3(0.5,0.7,1.0),t)
+class Sphere:
+	Center = Vec3()
+	radius = 1.0
+
+	def __init__(self, center = Vec3(), radius=1.0):
+		self.Center = center
+		self.Radius = radius
+
+	def Hit(self, ray, tMin, tMax, hitRecord):
+		centerToOrigin = ray.Origin - self.Center
+		a = Vec3.Dot(ray.Direction, ray.Direction)
+		b = Vec3.Dot(centerToOrigin, ray.Direction) #there should be a *2.f here but simplifies the equation later
+		c = Vec3.Dot(centerToOrigin, centerToOrigin) - self.Radius*self.Radius
+		discriminant = b*b-a*c
+		if discriminant > 0.0:
+			tmp = (-b - math.sqrt(discriminant) ) / a
+			if tMin<=tmp and tmp<=tMax :
+				hitRecord.ParamT = tmp
+				hitRecord.Point = ray.PointAtParameter(tmp)
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
+				return True
+			
+			tmp = (-b + math.sqrt(discriminant) ) / a
+			if tMin<=tmp and tmp<=tMax : #maybe some code to put in common here
+				hitRecord.ParamT = tmp
+				hitRecord.Point = ray.PointAtParameter(tmp)
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
+				return True
+		return False
+
+##################################################################################
+
+class HitableList:
+	Elems = []
+	def Hit(self, ray, tMin, tMax, hitRecord):
+		hitSomething = False
+		closestSoFar = tMax
+		for curElem in self.Elems:
+			if curElem.Hit(ray, tMin, closestSoFar, hitRecord):
+				hitSomething = True
+				closestSoFar = hitRecord.ParamT
+				#hitRecord = temp
+		return hitSomething
+	
+##################################################################################
+
+
 
 
 
