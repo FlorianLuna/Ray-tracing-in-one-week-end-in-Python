@@ -58,7 +58,7 @@ class Ray :
 		self.Direction = direction
 
 	def PointAtParameter(self,t):
-		return self.Origin + self.direction.Mul(t) #TODO : probably not the right way to multiply a vec3 with a float
+		return self.Origin + self.Direction.Mul(t) #TODO : probably not the right way to multiply a vec3 with a float
 
 ##################################################################################
 
@@ -68,19 +68,24 @@ def HitSphere(center, radius, ray):
 	b = 2.0*Vec3.Dot(centerToOrigin, ray.Direction)
 	c = Vec3.Dot(centerToOrigin, centerToOrigin) - radius*radius
 	discriminant = b*b-4*a*c
-	return discriminant > 0.0
+	if discriminant < 0.0:
+		return -1.0
+	else:
+		return (-b - math.sqrt(discriminant)) / (2.0*a)
 
 
 ##################################################################################
 
 def Color(ray):	
-	if HitSphere(Vec3(0.0,0.0,-1.0),0.5,ray):
-		return Vec3(1.0,0.0,0.0)
-
-	#background
-	unitDirection = UnitVector(ray.Direction)	
-	t = 0.5 * (unitDirection.Y + 1.0)	
-	return Vec3(1.0,1.0,1.0).Lerp(Vec3(0.5,0.7,1.0),t)
+	t = HitSphere(Vec3(0.0,0.0,-1.0),0.5,ray)
+	if t>0.0 :
+		normal = UnitVector(ray.PointAtParameter(t) - Vec3(0.0,0.0,-1.0))
+		return Vec3(normal.X+1.0, normal.Y+1.0, normal.Z+1.0).Mul(0.5)
+	else:
+		#background
+		unitDirection = UnitVector(ray.Direction)	
+		t = 0.5 * (unitDirection.Y + 1.0)	
+		return Vec3(1.0,1.0,1.0).Lerp(Vec3(0.5,0.7,1.0),t)
 
 
 
