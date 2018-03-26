@@ -1,5 +1,6 @@
 import math
 import random
+import pdb
 
 class Vec3:
 	X=0.0
@@ -32,6 +33,11 @@ class Vec3:
 	def Length(self):
 		return math.sqrt(self.X*self.X + self.Y*self.Y + self.Z*self.Z)
 
+	def Copy(self, other):
+		self.X = other.X
+		self.Y = other.Y
+		self.Z = other.Z
+
 	def SquaredLength(self):
 		return self.X*self.X + self.Y*self.Y + self.Z*self.Z
 
@@ -57,7 +63,7 @@ class Ray :
 	Origin = Vec3()
 	Direction = Vec3()
 
-	def __init__(self, origin, direction):
+	def __init__(self, origin=Vec3(), direction=Vec3()):
 		self.Origin = origin
 		self.Direction = direction
 
@@ -66,6 +72,11 @@ class Ray :
 
 ##################################################################################
 
+def Reflect(v, n):
+	return v - n.Mul(2.0*v.Dot(n))
+
+
+##################################################################################
 class Camera:
 	Origin = Vec3()
 	LowerLeftCorner = Vec3(-2.0,-1.0,-1.0)
@@ -75,24 +86,81 @@ class Camera:
 	def GetRay(self, u,v):
 		return Ray(self.Origin, self.LowerLeftCorner + self.Horizontal.Mul(u) + self.Vertical.Mul(v) - self.Origin)
 
+##################################################################################
+#Rejection method
+def RandomInUnitSphere():
+	point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
+	while point.SquaredLength() >= 1.0 :
+		point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
+	return point
 
 ##################################################################################
 
 class HitRecord:
-	ParamT = 0.0
-	Point = Vec3()
-	Normal = Vec3()
+	ParamT = None
+	Point = None
+	Normal = None
+	Material = None
+
+##################################################################################
+#Material
+class Material:
+
+	def __init__(self,albedo):
+		pass
+
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):
+		pass
+
+	def Display(self) :
+		pass
+	
+
+class Lambertian(Material):
+	Albedo = None
+
+	def __init__(self, albedo) :
+		self.Albedo = albedo
+
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):								
+		scatteredRay.Origin.Copy(hitRecord.Point)
+		scatteredRay.Direction.Copy(hitRecord.Normal + RandomInUnitSphere())
+		attenuation.Copy(self.Albedo)
+		return True
+
+	def Display(self) :
+		print("Lambertian")
+
+class Metal(Material):
+	Albedo = None
+	#Fuzziness
+
+	def __init__(self, albedo) :
+		self.Albedo = albedo
+
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):		
+		reflected = Reflect(UnitVector(ray.Direction), hitRecord.Normal)		
+		scatteredRay.Origin.Copy(hitRecord.Point)
+		scatteredRay.Direction.Copy(reflected)
+		attenuation.Copy(self.Albedo)
+		return (scatteredRay.Direction.Dot(hitRecord.Normal)>0)
+
+	def Display(self) :
+		print("Metal")
 
 
 ##################################################################################
 
 class Sphere:
-	Center = Vec3()
-	radius = 1.0
+	Center = None
+	radius = None
 
-	def __init__(self, center = Vec3(), radius=1.0):
+	Material = None
+
+	def __init__(self, center, radius, material):
 		self.Center = center
 		self.Radius = radius
+		self.Material = material
 
 	def Hit(self, ray, tMin, tMax, hitRecord):
 		centerToOrigin = ray.Origin - self.Center
@@ -105,7 +173,8 @@ class Sphere:
 			if tMin<=tmp and tmp<=tMax :
 				hitRecord.ParamT = tmp
 				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)				
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)								
+				hitRecord.Material = self.Material
 				return True
 			
 			tmp = (-b + math.sqrt(discriminant) ) / a
@@ -113,17 +182,11 @@ class Sphere:
 				hitRecord.ParamT = tmp
 				hitRecord.Point = ray.PointAtParameter(tmp)
 				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)				
+				hitRecord.Material = self.Material
 				return True
 		return False
 ##################################################################################
-#Rejection method
-def RandomInUnitSphere():
-	point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
-	while point.SquaredLength() >= 1.0 :
-		point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
-	return point
 
-##################################################################################
 
 class HitableList:
 	Elems = []

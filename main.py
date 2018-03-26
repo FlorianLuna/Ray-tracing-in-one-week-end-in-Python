@@ -3,30 +3,51 @@ import rt
 import sys
 import random
 import math
+import pdb
 
 def ColorToGammaSpaceToPPM(color, maxValue):
 	tmp = rt.Vec3(math.sqrt(color.X),math.sqrt(color.Y), math.sqrt(color.Z))
 	return tmp.Mul(maxValue)
 
-#QUALITY Option
-MAX_RECURSION_ALLOWED = 500 #TODO port that code into something iterative rather than recursive that's poorly performing
-nsample = 100 #for aliasing# PPM header
+#High quality Option
+MAX_RECURSION_ALLOWED = 50 #TODO port that code into something iterative rather than recursive that's poorly performing
+nsample = 10 #for aliasing# PPM header
+
+#Comment for high quality
+#MAX_RECURSION_ALLOWED = 50
+#nsample = 1 #for aliasing# PPM header
+
 nx = 200 #image resolution
 ny = 100 #image resolution
 
-def Color(ray, world, recursionLevel):
-	tmp = rt.HitRecord()
-	if world.Hit(ray, 0.0, sys.float_info.max, tmp) and recursionLevel < MAX_RECURSION_ALLOWED:
-		#return rt.Vec3(tmp.Normal.X + 1.0, tmp.Normal.Y + 1.0, tmp.Normal.Z + 1.0).Mul(0.5) #NORMAL VISUALIZATION
+EPSILON = 0.001
+
+def Color2(ray, world, recursionLevel):	
+	tmp = rt.HitRecord() 	
+	if world.Hit(ray, EPSILON, sys.float_info.max, tmp) and recursionLevel < MAX_RECURSION_ALLOWED :
 		target = tmp.Point + tmp.Normal + rt.RandomInUnitSphere()
 		recursionLevel += 1
-		return Color(rt.Ray(tmp.Point, target-tmp.Point) ,world, recursionLevel).Mul(0.5)
+		return tmp.Material.Albedo * Color2(rt.Ray(tmp.Point, target-tmp.Point) ,world, recursionLevel)
 	else: #background
 		unitDirection = rt.UnitVector(ray.Direction)
 		t = 0.5 * (unitDirection.Y + 1.0)
 		return rt.Vec3(1.0,1.0,1.0).Lerp(rt.Vec3(0.5,0.7,1.0),t)
 
-#nsample = 100 #as in book
+def Color(ray, world, recursionLevel):
+	tmp = rt.HitRecord()
+	if world.Hit(ray, EPSILON, sys.float_info.max, tmp) :
+		scattered = rt.Ray()		
+		attenuation = rt.Vec3()		
+		if  recursionLevel < MAX_RECURSION_ALLOWED and tmp.Material.Scatter(ray, tmp, attenuation, scattered):							
+			recursionLevel += 1						
+			return attenuation * Color(scattered, world, recursionLevel)
+		else :		
+			return rt.Vec3()
+	else: #background
+		unitDirection = rt.UnitVector(ray.Direction)
+		t = 0.5 * (unitDirection.Y + 1.0)
+		return rt.Vec3(1.0,1.0,1.0).Lerp(rt.Vec3(0.5,0.7,1.0),t)
+
 maxval = 255
 ppm_header = f'P6 {nx} {ny} {maxval}\n'
 
@@ -40,8 +61,10 @@ origin = rt.Vec3()
 scale = 255.9
 
 scene = rt.HitableList()
-scene.Elems.append(rt.Sphere(rt.Vec3(0.0,0.0,-1.0), 0.5))
-scene.Elems.append(rt.Sphere(rt.Vec3(0.0,-100.5,-1.0), 100.0))
+scene.Elems.append(rt.Sphere(rt.Vec3(0.0,0.0,-1.0), 0.5, rt.Lambertian(rt.Vec3(0.8,0.3,0.3))))
+scene.Elems.append(rt.Sphere(rt.Vec3(0.0,-100.5,-1.0), 100.0, rt.Lambertian(rt.Vec3(0.8,0.8,0.0))))
+scene.Elems.append(rt.Sphere(rt.Vec3(1.0,0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.6,0.2))))
+scene.Elems.append(rt.Sphere(rt.Vec3(-1.0,-0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.8,0.8))))
 
 mainCamera = rt.Camera()
 curPurcentComplete = 0
