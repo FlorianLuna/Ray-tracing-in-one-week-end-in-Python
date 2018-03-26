@@ -11,7 +11,7 @@ def ColorToGammaSpaceToPPM(color, maxValue):
 
 #High quality Option
 MAX_RECURSION_ALLOWED = 50 #TODO port that code into something iterative rather than recursive that's poorly performing
-nsample = 10 #for aliasing# PPM header
+nsample = 100 #for aliasing# PPM header
 
 #Comment for high quality
 #MAX_RECURSION_ALLOWED = 50
@@ -63,8 +63,8 @@ scale = 255.9
 scene = rt.HitableList()
 scene.Elems.append(rt.Sphere(rt.Vec3(0.0,0.0,-1.0), 0.5, rt.Lambertian(rt.Vec3(0.8,0.3,0.3))))
 scene.Elems.append(rt.Sphere(rt.Vec3(0.0,-100.5,-1.0), 100.0, rt.Lambertian(rt.Vec3(0.8,0.8,0.0))))
-scene.Elems.append(rt.Sphere(rt.Vec3(1.0,0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.6,0.2))))
-scene.Elems.append(rt.Sphere(rt.Vec3(-1.0,-0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.8,0.8))))
+scene.Elems.append(rt.Sphere(rt.Vec3(1.0,0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.6,0.2),0.3)))
+scene.Elems.append(rt.Sphere(rt.Vec3(-1.0,-0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.8,0.8),1.0)))
 
 mainCamera = rt.Camera()
 curPurcentComplete = 0

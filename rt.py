@@ -133,15 +133,16 @@ class Lambertian(Material):
 
 class Metal(Material):
 	Albedo = None
-	#Fuzziness
+	Fuzziness = 0.0
 
-	def __init__(self, albedo) :
+	def __init__(self, albedo, fuzz) :
 		self.Albedo = albedo
+		self.Fuzziness = fuzz
 
 	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):		
 		reflected = Reflect(UnitVector(ray.Direction), hitRecord.Normal)		
 		scatteredRay.Origin.Copy(hitRecord.Point)
-		scatteredRay.Direction.Copy(reflected)
+		scatteredRay.Direction.Copy(reflected + RandomInUnitSphere().Mul(self.Fuzziness))
 		attenuation.Copy(self.Albedo)
 		return (scatteredRay.Direction.Dot(hitRecord.Normal)>0)
 
