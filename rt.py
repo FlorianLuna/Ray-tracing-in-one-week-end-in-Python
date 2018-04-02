@@ -92,30 +92,6 @@ def Schlick(cosine, refidx):
 	r0 = (1.0-refidx)/(1.0+refidx)
 	r0 = r0*r0
 	return r0+(1.0-r0)*math.pow(1.0-cosine,5.0)
-
-##################################################################################
-class Camera:
-	Origin = None
-	LowerLeftCorner = None
-	Horizontal = None
-	Vertical = None
-
-	def __init__(self, lookfrom, lookat, vup, vfov, aspect):
-		theta = vfov * math.pi / 180.0
-		half_height = math.tan(theta * 0.5)
-		half_width = aspect * half_height
-		self.Origin = lookfrom
-		u, v, w = Vec3(), Vec3(), Vec3()
-		w = UnitVector(lookfrom - lookat)
-		u = UnitVector(vup.Cross(w))
-		v= w.Cross(u)
-		self.LowerLeftCorner = self.Origin - u.Mul(half_width) - v.Mul(half_height) -w
-		self.Horizontal = u.Mul(2.0*half_width)
-		self.Vertical = v.Mul(2.0*half_height)
-
-	def GetRay(self, u,v):
-		return Ray(self.Origin, self.LowerLeftCorner + self.Horizontal.Mul(u) + self.Vertical.Mul(v) - self.Origin)
-
 ##################################################################################
 #Rejection method
 def RandomInUnitSphere():
@@ -123,6 +99,39 @@ def RandomInUnitSphere():
 	while point.SquaredLength() >= 1.0 :
 		point = Vec3(random.random(), random.random(), random.random()).Mul(2.0) - Vec3(1.0,1.0,1.0)
 	return point
+
+def RandomInUnitDisk():
+	point = Vec3(random.random(), random.random(), 0.0).Mul(2.0) - Vec3(1.0,1.0,0.0)
+	while point.SquaredLength() >= 1.0 :
+		point = Vec3(random.random(), random.random(), 0.0).Mul(2.0) - Vec3(1.0,1.0,0.0)
+	return point
+
+##################################################################################
+class Camera:
+	Origin = None
+	LowerLeftCorner = None
+	Horizontal = None
+	Vertical = None
+	LensRadius = 0.0
+	U,V,W = None, None, None
+
+	def __init__(self, lookfrom, lookat, vup, vfov, aspect, aperture, focus_dist):
+		self.LensRadius = aperture * 0.5
+		theta = vfov * math.pi / 180.0
+		half_height = math.tan(theta * 0.5)
+		half_width = aspect * half_height
+		self.Origin = lookfrom		
+		self.W = UnitVector(lookfrom - lookat)
+		self.U = UnitVector(vup.Cross(self.W))
+		self.V= self.W.Cross(self.U)
+		self.LowerLeftCorner = self.Origin + (self.U.Mul(-half_width) - self.V.Mul(half_height) -self.W).Mul(focus_dist)
+		self.Horizontal = self.U.Mul(2.0*half_width*focus_dist)
+		self.Vertical = self.V.Mul(2.0*half_height*focus_dist)
+
+	def GetRay(self, s,t):
+		rd = RandomInUnitDisk().Mul(self.LensRadius)
+		offset = self.U.Mul(rd.X) + self.V.Mul(rd.Y)
+		return Ray(self.Origin + offset, self.LowerLeftCorner + self.Horizontal.Mul(s) + self.Vertical.Mul(t) - self.Origin - offset)
 
 ##################################################################################
 
@@ -266,4 +275,28 @@ class HitableList:
 		return hitSomething
 	
 ##################################################################################
+
+def RandomScene(Scene):
+	n=500
+	Scene.Elems.append(Sphere(Vec3(0.0,-1000.0,0.0), 1000.0, Lambertian(Vec3(0.5,0.5,0.5))))#ground sphere
+	for a in range(-11,11) :
+		for b in range(-11,11) :
+			chooseMat = random.random()
+			center = Vec3(float(a)+0.9*random.random(), 0.2, float(b)+0.9*random.random())
+			if (center-Vec3(4.0,0.2,0.0)).Length() >= 0.9:
+				if (chooseMat<=0.95):
+					Scene.Elems.append(Sphere(center, 0.2, Lambertian(Vec3(random.random()*random.random(),random.random()*random.random(),random.random()*random.random()))))
+				else:
+					Scene.Elems.append(Sphere(center, 0.2, Metal(Vec3(0.5*(1.0+random.random()), 0.5*(1.0+random.random()), 0.5*(1.0+random.random())), 0.5*random.random())))
+			else:
+				Scene.Elems.append(Sphere(center, 0.2, Dielectric(1.5)))
+
+	Scene.Elems.append(Sphere(Vec3(0.0,1.0,0.0), 1.0, Dielectric(1.5)))
+	Scene.Elems.append(Sphere(Vec3(-4.0,1.0,0.0), 1.0, Lambertian(Vec3(0.4,0.2,0.1))))
+	Scene.Elems.append(Sphere(Vec3(4.0,1.0,0.0), 1.0, Metal(Vec3(0.7,0.6,0.5), 0.0)))
+	# Scene.Elems.append(Sphere(Vec3(0.0,0.0,-1.0), 0.5, Lambertian(Vec3(0.1,0.2,0.5))))
+	# Scene.Elems.append(Sphere(Vec3(0.0,-100.5,-1.0), 100.0, Lambertian(Vec3(0.8,0.8,0.0))))
+	# Scene.Elems.append(Sphere(Vec3(1.0,0.0,-1.0), 0.5, Metal(Vec3(0.8,0.6,0.2),0.3)))
+	# Scene.Elems.append(Sphere(Vec3(-1.0,-0.0,-1.0), 0.5, Dielectric(1.5)))
+	# Scene.Elems.append(Sphere(Vec3(-1.0,-0.0,-1.0), -0.45, Dielectric(1.5))) #hack to make the normal point inside
 

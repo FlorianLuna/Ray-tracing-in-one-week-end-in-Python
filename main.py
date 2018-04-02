@@ -60,18 +60,16 @@ origin = rt.Vec3()
 scale = 255.9
 
 scene = rt.HitableList()
-scene.Elems.append(rt.Sphere(rt.Vec3(0.0,0.0,-1.0), 0.5, rt.Lambertian(rt.Vec3(0.1,0.2,0.5))))
-scene.Elems.append(rt.Sphere(rt.Vec3(0.0,-100.5,-1.0), 100.0, rt.Lambertian(rt.Vec3(0.8,0.8,0.0))))
-scene.Elems.append(rt.Sphere(rt.Vec3(1.0,0.0,-1.0), 0.5, rt.Metal(rt.Vec3(0.8,0.6,0.2),0.3)))
+rt.RandomScene(scene)
 
-scene.Elems.append(rt.Sphere(rt.Vec3(-1.0,-0.0,-1.0), 0.5, rt.Dielectric(1.5)))
-scene.Elems.append(rt.Sphere(rt.Vec3(-1.0,-0.0,-1.0), -0.45, rt.Dielectric(1.5))) #hack to make the normal point inside
 
-#R = math.cos(math.pi * 0.25)
-#scene.Elems.append(rt.Sphere(rt.Vec3(-R,0.0,-1.0), R, rt.Lambertian(rt.Vec3(0.0,0.0,1.0))))
-#scene.Elems.append(rt.Sphere(rt.Vec3(R,0.0,-1.0), R, rt.Lambertian(rt.Vec3(1.0,0.0,0.0))))
 
-mainCamera = rt.Camera(rt.Vec3(-2.0,2.0,1.0), rt.Vec3(0.0,0.0,-1.0), rt.Vec3(0.0,1.0,0.0), 45.0, float(nx)/float(ny))
+lookFrom = rt.Vec3(14.0,2.0,4.0)
+lookAt = rt.Vec3(0.0,0.0,-1.0)
+distToFocus = (lookFrom-lookAt).Length()
+aperture = 2.0
+
+mainCamera = rt.Camera(lookFrom, lookAt, rt.Vec3(0.0,1.0,0.0), 20.0, float(nx)/float(ny), 0.0, distToFocus)
 curPurcentComplete = 0
 
 for i in range(0, nx):
@@ -84,10 +82,12 @@ for i in range(0, nx):
 			color += Color(ray,scene,0)			
 		color = color.Mul(1.0/float(nsample))
 		color = ColorToGammaSpaceToPPM(color, scale)
-		index = 3 * ((ny-1-j) * nx + i) #matching what is in the book
+		index = 3 * ((ny-1-j) * nx + i) #matching what is in the book		
+		#print(index, ",",color.X, ",",color.Y,",", color.Z, ",")
 		image[index] = int(color.X)
 		image[index + 1] = int(color.Y)
 		image[index + 2] = int(color.Z)
+
 		print("Cur Pixel, ", i+1, ", ", j+1, "complete ")		
 
 print("Saving Image")
