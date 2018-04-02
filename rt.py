@@ -30,6 +30,9 @@ class Vec3:
 	def Dot(value0, value1):
 		return value0.X*value1.X + value0.Y*value1.Y + value0.Z*value1.Z
 
+	def Cross(self, other):
+		return Vec3(self.Y*other.Z-self.Z*other.Y, self.Z*other.X-self.X*other.Z, self.X*other.Y-self.Y*other.X)
+
 	def Length(self):
 		return math.sqrt(self.X*self.X + self.Y*self.Y + self.Z*self.Z)
 
@@ -75,13 +78,40 @@ class Ray :
 def Reflect(v, n):
 	return v - n.Mul(2.0*v.Dot(n))
 
+def Refract(v, n, ni_over_nt, refracted) :
+	uv = UnitVector(v)
+	dt = uv.Dot(n)
+	discriminant = 1.0-ni_over_nt*ni_over_nt*(1.0-dt*dt)
+	if discriminant>0.0 :
+		refracted.Copy((uv-n.Mul(dt)).Mul(ni_over_nt) - n.Mul(math.sqrt(discriminant)))
+		return True
+	else :
+		return False
+
+def Schlick(cosine, refidx):
+	r0 = (1.0-refidx)/(1.0+refidx)
+	r0 = r0*r0
+	return r0+(1.0-r0)*math.pow(1.0-cosine,5.0)
 
 ##################################################################################
 class Camera:
-	Origin = Vec3()
-	LowerLeftCorner = Vec3(-2.0,-1.0,-1.0)
-	Horizontal = Vec3(4.0,0.0,0.0)
-	Vertical = Vec3(0.0,2.0,0.0)
+	Origin = None
+	LowerLeftCorner = None
+	Horizontal = None
+	Vertical = None
+
+	def __init__(self, lookfrom, lookat, vup, vfov, aspect):
+		theta = vfov * math.pi / 180.0
+		half_height = math.tan(theta * 0.5)
+		half_width = aspect * half_height
+		self.Origin = lookfrom
+		u, v, w = Vec3(), Vec3(), Vec3()
+		w = UnitVector(lookfrom - lookat)
+		u = UnitVector(vup.Cross(w))
+		v= w.Cross(u)
+		self.LowerLeftCorner = self.Origin - u.Mul(half_width) - v.Mul(half_height) -w
+		self.Horizontal = u.Mul(2.0*half_width)
+		self.Vertical = v.Mul(2.0*half_height)
 
 	def GetRay(self, u,v):
 		return Ray(self.Origin, self.LowerLeftCorner + self.Horizontal.Mul(u) + self.Vertical.Mul(v) - self.Origin)
@@ -115,6 +145,7 @@ class Material:
 	def Display(self) :
 		pass
 	
+##################################################################################
 
 class Lambertian(Material):
 	Albedo = None
@@ -128,8 +159,7 @@ class Lambertian(Material):
 		attenuation.Copy(self.Albedo)
 		return True
 
-	def Display(self) :
-		print("Lambertian")
+##################################################################################	
 
 class Metal(Material):
 	Albedo = None
@@ -145,9 +175,44 @@ class Metal(Material):
 		scatteredRay.Direction.Copy(reflected + RandomInUnitSphere().Mul(self.Fuzziness))
 		attenuation.Copy(self.Albedo)
 		return (scatteredRay.Direction.Dot(hitRecord.Normal)>0)
+	
+##################################################################################
 
-	def Display(self) :
-		print("Metal")
+class Dielectric(Material):
+	Ref_idx = 0.0
+
+	def __init__(self,ref_idx) :
+		self.Ref_idx = ref_idx
+
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):		
+		outward_normal = Vec3()		
+		ni_over_nt = 0.0
+		attenuation.Copy(Vec3(1.0,1.0,1.0))
+		refracted = Vec3()
+		reflect_prob = 0.0
+		cosine = 0.0
+		unitDirection = UnitVector(ray.Direction)
+		if ray.Direction.Dot(hitRecord.Normal) > 0.0 :
+			outward_normal.Copy(hitRecord.Normal.Mul(-1.0))
+			ni_over_nt = self.Ref_idx
+			cosine = self.Ref_idx * hitRecord.Normal.Dot(unitDirection)
+		else:
+			outward_normal.Copy(hitRecord.Normal)
+			ni_over_nt = 1.0/self.Ref_idx
+			cosine = -hitRecord.Normal.Dot(unitDirection)
+
+		reflected = Reflect(ray.Direction, hitRecord.Normal)
+		if Refract(ray.Direction, outward_normal, ni_over_nt, refracted):
+			reflect_prob = Schlick(cosine, self.Ref_idx)
+		else :						
+			reflect_prob = 1.0
+
+		scatteredRay.Origin.Copy(hitRecord.Point)
+		if random.random()<reflect_prob:			
+			scatteredRay.Direction.Copy(reflected)					
+		else:
+			scatteredRay.Direction.Copy(refracted)						
+		return True
 
 
 ##################################################################################
