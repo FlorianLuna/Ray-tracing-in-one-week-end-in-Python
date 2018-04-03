@@ -1,6 +1,5 @@
 import math
 import random
-import pdb
 
 class Vec3:
 	X=0.0
@@ -67,11 +66,15 @@ class Ray :
 	Direction = Vec3()
 
 	def __init__(self, origin=Vec3(), direction=Vec3()):
-		self.Origin = origin
-		self.Direction = direction
+		self.Origin.Copy(origin)
+		self.Direction.Copy(direction)
 
 	def PointAtParameter(self,t):
 		return self.Origin + self.Direction.Mul(t)
+
+	def Copy(self,other):
+		self.Origin.Copy(other.Origin)
+		self.Direction.Copy(other.Direction)
 
 ##################################################################################
 
@@ -162,7 +165,7 @@ class Lambertian(Material):
 	def __init__(self, albedo) :
 		self.Albedo = albedo
 
-	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):								
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):
 		scatteredRay.Origin.Copy(hitRecord.Point)
 		scatteredRay.Direction.Copy(hitRecord.Normal + RandomInUnitSphere())
 		attenuation.Copy(self.Albedo)
@@ -178,8 +181,8 @@ class Metal(Material):
 		self.Albedo = albedo
 		self.Fuzziness = fuzz
 
-	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):		
-		reflected = Reflect(UnitVector(ray.Direction), hitRecord.Normal)		
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):
+		reflected = Reflect(UnitVector(ray.Direction), hitRecord.Normal)
 		scatteredRay.Origin.Copy(hitRecord.Point)
 		scatteredRay.Direction.Copy(reflected + RandomInUnitSphere().Mul(self.Fuzziness))
 		attenuation.Copy(self.Albedo)
@@ -193,7 +196,7 @@ class Dielectric(Material):
 	def __init__(self,ref_idx) :
 		self.Ref_idx = ref_idx
 
-	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):		
+	def Scatter(self, ray, hitRecord, attenuation, scatteredRay):
 		outward_normal = Vec3()		
 		ni_over_nt = 0.0
 		attenuation.Copy(Vec3(1.0,1.0,1.0))
@@ -213,14 +216,14 @@ class Dielectric(Material):
 		reflected = Reflect(ray.Direction, hitRecord.Normal)
 		if Refract(ray.Direction, outward_normal, ni_over_nt, refracted):
 			reflect_prob = Schlick(cosine, self.Ref_idx)
-		else :						
+		else :
 			reflect_prob = 1.0
 
 		scatteredRay.Origin.Copy(hitRecord.Point)
-		if random.random()<reflect_prob:			
-			scatteredRay.Direction.Copy(reflected)					
+		if random.random()<reflect_prob:
+			scatteredRay.Direction.Copy(reflected)
 		else:
-			scatteredRay.Direction.Copy(refracted)						
+			scatteredRay.Direction.Copy(refracted)
 		return True
 
 
@@ -248,7 +251,7 @@ class Sphere:
 			if tMin<=tmp and tmp<=tMax :
 				hitRecord.ParamT = tmp
 				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)								
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
 				hitRecord.Material = self.Material
 				return True
 			
@@ -256,7 +259,7 @@ class Sphere:
 			if tMin<=tmp and tmp<=tMax : #maybe some code to put in common here
 				hitRecord.ParamT = tmp
 				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)				
+				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
 				hitRecord.Material = self.Material
 				return True
 		return False
@@ -279,24 +282,19 @@ class HitableList:
 def RandomScene(Scene):
 	n=500
 	Scene.Elems.append(Sphere(Vec3(0.0,-1000.0,0.0), 1000.0, Lambertian(Vec3(0.5,0.5,0.5))))#ground sphere
-	for a in range(-11,11) :
-		for b in range(-11,11) :
-			chooseMat = random.random()
-			center = Vec3(float(a)+0.9*random.random(), 0.2, float(b)+0.9*random.random())
-			if (center-Vec3(4.0,0.2,0.0)).Length() >= 0.9:
-				if (chooseMat<=0.95):
-					Scene.Elems.append(Sphere(center, 0.2, Lambertian(Vec3(random.random()*random.random(),random.random()*random.random(),random.random()*random.random()))))
-				else:
-					Scene.Elems.append(Sphere(center, 0.2, Metal(Vec3(0.5*(1.0+random.random()), 0.5*(1.0+random.random()), 0.5*(1.0+random.random())), 0.5*random.random())))
-			else:
-				Scene.Elems.append(Sphere(center, 0.2, Dielectric(1.5)))
+	# for a in range(-11,11) :
+	# 	for b in range(-11,11) :
+	# 		chooseMat = random.random()
+	# 		center = Vec3(float(a)+0.9*random.random(), 0.2, float(b)+0.9*random.random())
+	# 		if (center-Vec3(4.0,0.2,0.0)).Length() >= 0.9:
+	# 			if (chooseMat<=0.95):
+	# 				Scene.Elems.append(Sphere(center, 0.2, Lambertian(Vec3(random.random()*random.random(),random.random()*random.random(),random.random()*random.random()))))
+	# 			else:
+	# 				Scene.Elems.append(Sphere(center, 0.2, Metal(Vec3(0.5*(1.0+random.random()), 0.5*(1.0+random.random()), 0.5*(1.0+random.random())), 0.5*random.random())))
+	# 		else:
+	# 			Scene.Elems.append(Sphere(center, 0.2, Dielectric(1.5)))
 
 	Scene.Elems.append(Sphere(Vec3(0.0,1.0,0.0), 1.0, Dielectric(1.5)))
 	Scene.Elems.append(Sphere(Vec3(-4.0,1.0,0.0), 1.0, Lambertian(Vec3(0.4,0.2,0.1))))
 	Scene.Elems.append(Sphere(Vec3(4.0,1.0,0.0), 1.0, Metal(Vec3(0.7,0.6,0.5), 0.0)))
-	# Scene.Elems.append(Sphere(Vec3(0.0,0.0,-1.0), 0.5, Lambertian(Vec3(0.1,0.2,0.5))))
-	# Scene.Elems.append(Sphere(Vec3(0.0,-100.5,-1.0), 100.0, Lambertian(Vec3(0.8,0.8,0.0))))
-	# Scene.Elems.append(Sphere(Vec3(1.0,0.0,-1.0), 0.5, Metal(Vec3(0.8,0.6,0.2),0.3)))
-	# Scene.Elems.append(Sphere(Vec3(-1.0,-0.0,-1.0), 0.5, Dielectric(1.5)))
-	# Scene.Elems.append(Sphere(Vec3(-1.0,-0.0,-1.0), -0.45, Dielectric(1.5))) #hack to make the normal point inside
-
+	
