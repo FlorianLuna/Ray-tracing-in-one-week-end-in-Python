@@ -62,12 +62,12 @@ def UnitVector(myVector):
 ##################################################################################
 
 class Ray : 
-	Origin = Vec3()
-	Direction = Vec3()
+	Origin = None
+	Direction = None
 
 	def __init__(self, origin=Vec3(), direction=Vec3()):
-		self.Origin.Copy(origin)
-		self.Direction.Copy(direction)
+		self.Origin = origin
+		self.Direction = direction
 
 	def PointAtParameter(self,t):
 		return self.Origin + self.Direction.Mul(t)
@@ -139,9 +139,9 @@ class Camera:
 ##################################################################################
 
 class HitRecord:
-	ParamT = None
-	Point = None
-	Normal = None
+	ParamT = 0
+	Point = Vec3()
+	Normal = Vec3()
 	Material = None
 
 ##################################################################################
@@ -232,7 +232,6 @@ class Dielectric(Material):
 class Sphere:
 	Center = None
 	radius = None
-
 	Material = None
 
 	def __init__(self, center, radius, material):
@@ -250,16 +249,16 @@ class Sphere:
 			tmp = (-b - math.sqrt(discriminant) ) / a
 			if tMin<=tmp and tmp<=tMax :
 				hitRecord.ParamT = tmp
-				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
+				hitRecord.Point.Copy(ray.PointAtParameter(tmp))
+				hitRecord.Normal.Copy((hitRecord.Point - self.Center).Mul(1.0/self.Radius))
 				hitRecord.Material = self.Material
 				return True
 			
 			tmp = (-b + math.sqrt(discriminant) ) / a
 			if tMin<=tmp and tmp<=tMax : #maybe some code to put in common here
 				hitRecord.ParamT = tmp
-				hitRecord.Point = ray.PointAtParameter(tmp)
-				hitRecord.Normal = (hitRecord.Point - self.Center).Mul(1.0/self.Radius)
+				hitRecord.Point.Copy(ray.PointAtParameter(tmp))
+				hitRecord.Normal.Copy((hitRecord.Point - self.Center).Mul(1.0/self.Radius))
 				hitRecord.Material = self.Material
 				return True
 		return False
@@ -279,20 +278,19 @@ class HitableList:
 	
 ##################################################################################
 
-def RandomScene(Scene):
-	n=500
+def RandomScene(Scene):	
 	Scene.Elems.append(Sphere(Vec3(0.0,-1000.0,0.0), 1000.0, Lambertian(Vec3(0.5,0.5,0.5))))#ground sphere
-	# for a in range(-11,11) :
-	# 	for b in range(-11,11) :
-	# 		chooseMat = random.random()
-	# 		center = Vec3(float(a)+0.9*random.random(), 0.2, float(b)+0.9*random.random())
-	# 		if (center-Vec3(4.0,0.2,0.0)).Length() >= 0.9:
-	# 			if (chooseMat<=0.95):
-	# 				Scene.Elems.append(Sphere(center, 0.2, Lambertian(Vec3(random.random()*random.random(),random.random()*random.random(),random.random()*random.random()))))
-	# 			else:
-	# 				Scene.Elems.append(Sphere(center, 0.2, Metal(Vec3(0.5*(1.0+random.random()), 0.5*(1.0+random.random()), 0.5*(1.0+random.random())), 0.5*random.random())))
-	# 		else:
-	# 			Scene.Elems.append(Sphere(center, 0.2, Dielectric(1.5)))
+	for a in range(-11,11) :
+		for b in range(-11,11) :
+			chooseMat = random.random()
+			center = Vec3(float(a)+0.9*random.random(), 0.2, float(b)+0.9*random.random())
+			if (center-Vec3(4.0,0.2,0.0)).Length() >= 0.9:
+				if (chooseMat<=0.95):
+					Scene.Elems.append(Sphere(center, 0.2, Lambertian(Vec3(random.random()*random.random(),random.random()*random.random(),random.random()*random.random()))))
+				else:
+					Scene.Elems.append(Sphere(center, 0.2, Metal(Vec3(0.5*(1.0+random.random()), 0.5*(1.0+random.random()), 0.5*(1.0+random.random())), 0.5*random.random())))
+			else:
+				Scene.Elems.append(Sphere(center, 0.2, Dielectric(1.5)))
 
 	Scene.Elems.append(Sphere(Vec3(0.0,1.0,0.0), 1.0, Dielectric(1.5)))
 	Scene.Elems.append(Sphere(Vec3(-4.0,1.0,0.0), 1.0, Lambertian(Vec3(0.4,0.2,0.1))))

@@ -10,13 +10,16 @@ def ColorToGammaSpaceToPPM(color, maxValue):
 
 #High quality Option
 MAX_RECURSION_ALLOWED = 50 #TODO port that code into something iterative rather than recursive that's poorly performing
-nsample = 1000 #for aliasing# PPM header
+nsample = 100  #for aliasing# PPM header
 
 #Comment for high quality
-#nsample = 10 #for aliasing# PPM header
+#nsample =  10 #for aliasing# PPM header
 
 nx = 200 #image resolution
 ny = 100 #image resolution
+
+nx = 400 #image resolution
+ny = 200 #image resolution
 
 EPSILON = 0.001
 
@@ -89,7 +92,7 @@ aperture = 0.0
 if BLUR :
 	aperture = 0.5
 
-mainCamera = rt.Camera(lookFrom, lookAt, rt.Vec3(0.0,1.0,0.0), 20.0, float(nx)/float(ny), aperture, distToFocus)
+mainCamera = rt.Camera(lookFrom, lookAt, rt.Vec3(0.0,1.0,0.0), 20, float(nx)/float(ny), aperture, distToFocus)
 curPurcentComplete = 0
 
 scale = 255.9
